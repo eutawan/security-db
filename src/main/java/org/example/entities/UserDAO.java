@@ -4,21 +4,32 @@ import org.example.DBConnection;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.sql.ResultSet;
 
 public class UserDAO {
 
-    public static void loginExiste(User u) {
-        if (u.getLogin() != null){
-            LoginSeguro loginSeguro = new LoginSeguro();
+    private static Connection conn = null;
 
-        }
+    public boolean loginExiste(String userLogin) throws Exception {
+
+        conn = DBConnection.conn();
+
+        String sql = "SELECT * FROM users WHERE login = ?";
+        PreparedStatement st = conn.prepareStatement(sql);
+        st.setString(1, userLogin);
+
+        ResultSet rs = st.executeQuery();
+
+        return rs.next();
     }
 
-    public void cadastrar(User u) {
+    public void cadastrar(User u) throws Exception {
 
-        try {
-            Connection conn = DBConnection.conn();
+        if (loginExiste(u.getLogin())) {
+            System.out.println("Este login já está em uso");
+        }
+        else {
+            conn = DBConnection.conn();
 
             String sql = "INSERT INTO users (login, pass) VALUES (?, ?)";
 
@@ -26,16 +37,20 @@ public class UserDAO {
             st.setString(1, u.getLogin());
             st.setString(2, u.getPass());
 
-            st.executeUpdate();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+            int rows = st.executeUpdate();
+
+            if (rows > 0) {
+                System.out.println("Usuário cadastrado com sucesso");
+            } else {
+                System.out.println("Erro ao executar");
+            }
         }
     }
 
-    public void atualizar(User u) {
-        try {
-            Connection conn = DBConnection.conn();
+    public void atualizar(User u) throws Exception {
+        conn = DBConnection.conn();
+
+        if (loginExiste(u.getLogin())){
 
             String sql = "UPDATE users set pass = ? where login = ?";
 
@@ -44,10 +59,10 @@ public class UserDAO {
             st.setString(2, u.getLogin());
 
             st.executeUpdate();
-
+            System.out.println("Usuário " + u.getLogin() + " atualizado com sucesso");
         }
-        catch (Exception e){
-            e.printStackTrace();
+        else {
+            System.out.println("Esse usuário não existe");
         }
     }
 }
